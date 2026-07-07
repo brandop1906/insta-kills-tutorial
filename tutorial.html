@@ -1115,8 +1115,15 @@ pub player_animations: Vec&lt;Handle&lt;AnimationClip2D&gt;&gt;,</code></pre>
             <code class="inline">player.trickfilm</code> must define all five clips (<code class="inline">idle</code>,
             <code class="inline">moving</code>, <code class="inline">dashing</code>, <code class="inline">hooking</code>,
             <code class="inline">sliding</code>) — see the <code class="inline">.trickfilm</code> authoring earlier in this
-            chapter. A missing label fails the load. If you only have art for some states yet, list just those and keep the
-            index order consistent with the <code class="inline">PlayerState</code> variants you actually use.</p>
+            chapter. If you only have art for some states yet, list just those and keep the index order consistent with the
+            <code class="inline">PlayerState</code> variants you actually use.</p>
+          <p style="margin-top:10px;"><strong>The symptom to recognize:</strong> a <code class="inline">#label</code> that isn't in
+            the <code class="inline">.trickfilm</code> (or any asset <code class="inline">path</code> that doesn't exist) makes
+            <code class="inline">bevy_asset_loader</code> <em>fail that load and never leave</em>
+            <code class="inline">AssetLoading</code>. Because <code class="inline">OnEnter(Gaming)</code> and
+            <code class="inline">OnExit(AssetLoading)</code> then never fire, you get a <strong>blank window</strong> — no camera, no
+            player — often with no obvious error. If the screen is blank, suspect a missing asset file or a mistyped
+            <code class="inline">#label</code> first.</p>
         </div>
 
         <p>Next, a system that spawns the player entity. This is where the engine and the assets meet: a
@@ -1197,9 +1204,13 @@ fn setup(mut commands: Commands) {
           <p><code class="inline">cargo run</code>. The window opens, sits on <code class="inline">AssetLoading</code> for a blink
             while the files stream in, then switches to <code class="inline">Gaming</code> — and the player appears, centered,
             cycling through the idle clip on a loop. The character breathes. That's the "assets loaded and animating"
-            milestone. If the sprite shows but sits frozen, your <code class="inline">speed</code> is <code class="inline">0.0</code>;
-            if nothing shows at all, check that <code class="inline">setup_player</code> is on
-            <code class="inline">OnEnter(Gaming)</code> and that <code class="inline">.init_state::&lt;GameState&gt;()</code> is present.</p>
+            milestone. If the sprite shows but sits frozen, your <code class="inline">speed</code> is <code class="inline">0.0</code>.
+            If the window stays <strong>blank and never leaves <code class="inline">AssetLoading</code></strong>, an asset is failing
+            to load — double-check every <code class="inline">#[asset(path = ...)]</code> file exists under
+            <code class="inline">assets/</code> and every <code class="inline">#label</code> is actually defined in its
+            <code class="inline">.trickfilm</code> (a missing <code class="inline">dashing</code>/<code class="inline">sliding</code>
+            clip is the classic culprit). If nothing shows even after loading, confirm <code class="inline">setup_player</code> is on
+            <code class="inline">OnEnter(Gaming)</code> and <code class="inline">.init_state::&lt;GameState&gt;()</code> is present.</p>
         </div>
       </section>
 
