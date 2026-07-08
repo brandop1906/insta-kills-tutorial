@@ -40,6 +40,7 @@ impl Plugin for PlayerPlugin {
             input::InputPlugin,
             spawn::PlayerSpawnPlugin,
             movement::PlayerMovementPlugin,
+            state::PlayerStatePlugin
         ));
     }
 }
