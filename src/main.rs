@@ -3,10 +3,16 @@ use bevy::window::{PresentMode, Window, WindowMode};
 use bevy_asset_loader::prelude::*;
 
 pub use assets::GameAssets;
+use bevy_rapier2d::plugin::{RapierPhysicsPlugin, RapierConfiguration, DefaultRapierContext, NoUserData};
 
 use crate::animation::{Animation2DPlugin, AnimationPlayer2D};
+use crate::player::PlayerPlugin;
+use crate::player::input::InputPlugin;
+use crate::player::spawn::PlayerSpawnPlugin;
+
 mod assets;
 mod animation;
+mod player;
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.75, 0.6, 0.5);
 
@@ -27,6 +33,9 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(Animation2DPlugin)
+        .add_plugins(PlayerPlugin)
+        .add_systems(Startup, configure_physics)
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .init_state::<GameState>()
         .add_loading_state(
             LoadingState::new(GameState::AssetLoading)
@@ -34,7 +43,7 @@ fn main() {
             .load_collection::<GameAssets>(),
         )
         .init_state::<GameState>()
-        .add_systems(OnEnter(GameState::Gaming), (setup, setup_player))
+        .add_systems(OnEnter(GameState::Gaming), setup)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .run();
 }
@@ -43,22 +52,12 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
-fn setup_player(mut commands: Commands, assets: Res<GameAssets>) {
-    let mut animator = AnimationPlayer2D::default();
-    animator.play(assets.player_animations[0].clone()).repeat(); // 0 = idle
-
-    commands.spawn((
-        Sprite {
-            image: assets.player.clone(),
-            texture_atlas: Some(TextureAtlas {
-                layout: assets.player_layout.clone(),
-                index: 0,
-            }),
-            ..default()
-        },
-        Transform::from_xyz(0.0, 0.0, 0.0),
-        animator,
-    ));
+fn configure_physics(
+    mut q_rapier_config: Query<&mut RapierConfiguration, With<DefaultRapierContext>>,
+) {
+    if let Ok(mut rapier_config) = q_rapier_config.single_mut() {
+        rapier_config.gravity = Vec2::ZERO;
+    }
 }
 
 #[derive(States, Clone, Eq, PartialEq, Debug, Hash, Default)]
