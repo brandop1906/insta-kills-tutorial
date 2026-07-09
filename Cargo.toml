@@ -10,6 +10,9 @@ ron = "0.12.2"
 serde = "1.0.228"
 thiserror = "2.0.18"
 bevy_rapier2d = "0.33.0"
+chrono = "0.4.45"
+noisy_bevy = "0.13.0"
+glam = "0.33.2"
 
 [profile.dev]
 opt-level = 1

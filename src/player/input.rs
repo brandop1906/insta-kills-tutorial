@@ -1,7 +1,9 @@
-use bevy::input::InputSystems;
+use bevy::input::{InputSystems, mouse};
 use bevy::prelude::*;
 use bevy::input::mouse::MouseWheel;
+use bevy::window::PrimaryWindow;
 
+use crate::world::camera::MainCamera;
 use crate::player;
 
 #[derive(Resource, Default)]
@@ -54,15 +56,43 @@ fn fetch_scroll_events(mut scroll_evr: MessageReader<MouseWheel>, mut input: Res
     }
 }
 
+#[derive(Resource, Default)]
+pub struct MouseWorldCoords(pub Vec2);
+
+pub fn fetch_mouse_world_coords(
+    mut mouse_coords: ResMut<MouseWorldCoords>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+) {
+    let (camera, camera_transform) = match q_camera.single() {
+        Ok(c) => (c.0, c.1),
+        Err(_) => return,
+    };
+
+    let window = match q_window.single() {
+        Ok(w) => w,
+        Err(_) => return,
+    };
+
+    if let Some(world_position) = window
+        .cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor).ok())
+        .map(|ray| ray.origin.truncate())
+        {
+            mouse_coords.0 = world_position;
+        }
+}
+
 pub struct InputPlugin;
 
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerInput>()
+            .init_resource::<MouseWorldCoords>()
             .add_systems(PreUpdate, reset_player_input.before(InputSystems))
             .add_systems(
                 PreUpdate,
-                (player_movement, attack, dash, hook, input_escape, input_restart, fetch_scroll_events)
+                (player_movement, attack, dash, hook, input_escape, input_restart, fetch_scroll_events, fetch_mouse_world_coords)
                 .after(InputSystems)
             );
     }

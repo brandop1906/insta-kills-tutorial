@@ -3,16 +3,16 @@ use bevy::window::{PresentMode, Window, WindowMode};
 use bevy_asset_loader::prelude::*;
 
 pub use assets::GameAssets;
-use bevy_rapier2d::plugin::{RapierPhysicsPlugin, RapierConfiguration, DefaultRapierContext, NoUserData};
+use bevy_rapier2d::plugin::{RapierPhysicsPlugin, NoUserData};
 
-use crate::animation::{Animation2DPlugin, AnimationPlayer2D};
+use crate::animation::{Animation2DPlugin,};
 use crate::player::PlayerPlugin;
-use crate::player::input::InputPlugin;
-use crate::player::spawn::PlayerSpawnPlugin;
+use crate::world::WorldPlugin;
 
 mod assets;
 mod animation;
 mod player;
+mod world;
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.75, 0.6, 0.5);
 
@@ -34,8 +34,8 @@ fn main() {
         )
         .add_plugins(Animation2DPlugin)
         .add_plugins(PlayerPlugin)
-        .add_systems(Startup, configure_physics)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugins(WorldPlugin)
         .init_state::<GameState>()
         .add_loading_state(
             LoadingState::new(GameState::AssetLoading)
@@ -43,21 +43,8 @@ fn main() {
             .load_collection::<GameAssets>(),
         )
         .init_state::<GameState>()
-        .add_systems(OnEnter(GameState::Gaming), setup)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .run();
-}
-
-fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
-}
-
-fn configure_physics(
-    mut q_rapier_config: Query<&mut RapierConfiguration, With<DefaultRapierContext>>,
-) {
-    if let Ok(mut rapier_config) = q_rapier_config.single_mut() {
-        rapier_config.gravity = Vec2::ZERO;
-    }
 }
 
 #[derive(States, Clone, Eq, PartialEq, Debug, Hash, Default)]
